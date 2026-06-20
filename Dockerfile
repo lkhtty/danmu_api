@@ -1,17 +1,24 @@
-# 1. 基础镜像：直接使用原项目推荐的官方镜像
-FROM logvar/danmu-api:latest
+# 1. 顺着原作者，使用官方 Node.js 镜像
+FROM node:22-alpine
 
-USER root
+# 2. 设置工作目录
+WORKDIR /app
 
-# 2. 暴露端口
+# 3. 复制依赖并安装
+COPY package*.json ./
+RUN npm install
+
+# 4. 复制源码
+COPY danmu_api/ ./danmu_api/
+
+# 5. 暴露端口
 EXPOSE 7860
 
-# 3. 核心启动脚本：
-# 直接在容器内的 /app/config/.env 写入你在网页端配置的变量
-# 并且强制程序启动在 7860 端口
+# 6. 核心启动脚本（Node.js 版本）：
+# 启动前把网页端配置的变量准确写入 config/.env，然后用 node 启动服务
 CMD ["sh", "-c", "\
-    mkdir -p /app/config && \
-    echo 'TOKEN='${TOKEN:-87654321} > /app/config/.env && \
-    echo 'ADMIN_TOKEN='${ADMIN_TOKEN} >> /app/config/.env; \
-    python main.py --port 7860\
+    mkdir -p config && \
+    echo 'TOKEN='${TOKEN:-87654321} > config/.env && \
+    echo 'ADMIN_TOKEN='${ADMIN_TOKEN} >> config/.env; \
+    node danmu_api/server.js --port 7860\
     "]
